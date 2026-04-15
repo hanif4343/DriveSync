@@ -10,9 +10,10 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # এখানে আগে runs-runs-on ছিল, সেটি ঠিক করা হয়েছে
+    runs-on: ubuntu-22.04
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -21,32 +22,42 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: Setup Android SDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
           accept-android-sdk-licenses: true
 
-      - name: Write Google Drive Credentials
+      - name: Accept SDK licenses
         run: |
-          mkdir -p app/src/main/res/raw/
-          # Google Drive API credentials
-          printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/src/main/res/raw/credentials.json
-          # Backup location for google-services.json
-          printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            "platform-tools" || true
+
+      - name: Write google-services.json
+        run: printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
 
       - name: Make gradlew executable
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
+
+      - name: Download Gradle wrapper jar
+        run: |
+          mkdir -p gradle/wrapper
+          curl -sL "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
+            -o gradle/wrapper/gradle-wrapper.jar
+          echo "Wrapper jar: $(wc -c < gradle/wrapper/gradle-wrapper.jar) bytes"
 
       - name: Build Debug APK
         run: |
-          export _JAVA_OPTIONS="-Xmx2048m"
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleDebug \
+            --no-daemon \
+            --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: DriveSync-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
