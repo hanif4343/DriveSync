@@ -5,9 +5,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
-    runs-on: ubuntu-latest # লেটেস্ট ভার্সন ব্যবহার করা নিরাপদ
+    runs-on: ubuntu-latest # এখানে আগে runs-runs-on ছিল, সেটি ঠিক করা হয়েছে
 
     steps:
       - name: Checkout
@@ -18,31 +21,32 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle' # এটি আলাদা ক্যাশ স্টেপের প্রয়োজনীয়তা কমিয়ে দেয়
+          cache: 'gradle'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
 
-      - name: Write google-services.json
-        if: env.HAS_JSON == 'true'
-        env:
-          HAS_JSON: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+      - name: Write Google Drive Credentials
         run: |
+          mkdir -p app/src/main/res/raw/
+          # Google Drive API credentials
+          printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/src/main/res/raw/credentials.json
+          # Backup location for google-services.json
           printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
-          echo "Written $(wc -c < app/google-services.json) bytes"
 
       - name: Make gradlew executable
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace --no-daemon
+        run: |
+          export _JAVA_OPTIONS="-Xmx2048m"
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: DriveSync-debug-apk
-          path: app/build/outputs/apk/debug/*.apk # সব APK ফাইল খুঁজে নেবে
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
-
-      - name: Done
-        run: echo "APK ready! Download from Artifacts."
