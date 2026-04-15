@@ -7,10 +7,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest # লেটেস্ট ভার্সন ব্যবহার করা নিরাপদ
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -19,56 +18,30 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle' # এটি আলাদা ক্যাশ স্টেপের প্রয়োজনীয়তা কমিয়ে দেয়
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-
-      - name: Accept SDK licenses explicitly
-        run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "platform-tools" || true
 
       - name: Write google-services.json
+        if: env.HAS_JSON == 'true'
+        env:
+          HAS_JSON: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
         run: |
           printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
-          echo "written $(wc -c < app/google-services.json) bytes"
+          echo "Written $(wc -c < app/google-services.json) bytes"
 
       - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: wrapper
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: ${{ runner.os }}-gradle-
+        run: chmod +x gradlew
 
       - name: Build Debug APK
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-        run: |
-          ./gradlew assembleDebug \
-            --no-daemon \
-            --stacktrace \
-            -Dorg.gradle.java.home=$JAVA_HOME
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: DriveSync-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk # সব APK ফাইল খুঁজে নেবে
           retention-days: 30
 
       - name: Done
