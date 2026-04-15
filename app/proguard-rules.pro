@@ -1,0 +1,6 @@
+-keep class com.google.api.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keep class com.drivesync.** { *; }
+-dontwarn com.google.**
+-dontwarn javax.naming.**
+-dontwarn org.apache.**
