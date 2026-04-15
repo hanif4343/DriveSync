@@ -1,0 +1,16 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Gradle wrapper jar (GitHub Actions নিজে নামাবে)
+gradle/wrapper/gradle-wrapper.jar
+
+# Sensitive
+app/google-services.json
