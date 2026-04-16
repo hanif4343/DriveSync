@@ -105,13 +105,16 @@ public class MainActivity extends AppCompatActivity {
     // Client Secret লাগে না — Android app এ শুধু
     // SHA-1 + google-services.json দিলেই হয়।
     private void buildSignInClient() {
-        GoogleSignInOptions gso = new GoogleSignInOptions
-                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .requestScopes(new Scope(DriveScopes.DRIVE))
-                .build();
-        mSignInClient = GoogleSignIn.getClient(this, gso);
-    }
+    GoogleSignInOptions gso = new GoogleSignInOptions
+            .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestEmail()
+            // আপনার নতুন Web Client ID এখানে বসানো হলো
+            .requestIdToken("758590031325-l4d6ncqhr9836b4f49n28pkf18v2sb3g.apps.googleusercontent.com")
+            .requestScopes(new Scope(DriveScopes.DRIVE))
+            .build();
+    mSignInClient = GoogleSignIn.getClient(this, gso);
+}
+
 
     // ── Register Activity Result Launchers ──
     private void registerLaunchers() {
