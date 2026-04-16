@@ -1,4 +1,4 @@
-Name: Build DriveSync APK
+name: Build DriveSync APK
 
 on:
   push:
@@ -41,14 +41,10 @@ jobs:
         run: |
           ./gradlew assembleDebug \
             -Pandroid.injected.signing.store.file=drivesync.jks \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}" \
             --no-daemon
-
-      - name: Show Final APK SHA-1
-        run: |
-          keytool -printcert -jarfile app/build/outputs/apk/debug/app-debug.apk | grep SHA1
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
