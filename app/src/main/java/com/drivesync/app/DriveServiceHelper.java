@@ -19,33 +19,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 
-/**
- * ╔══════════════════════════════════════════════╗
- * ║  DriveServiceHelper                          ║
- * ║                                              ║
- * ║  GoogleAccountCredential ব্যবহার করা হয়েছে। ║
- * ║  Client Secret লাগে না।                     ║
- * ║  SHA-1 + google-services.json = যথেষ্ট।     ║
- * ╚══════════════════════════════════════════════╝
- */
 public class DriveServiceHelper {
 
-    private static final String TAG         = "DriveSync_Helper";
-    public  static final String DRIVE_DIR   = "DriveSync_Backup";
-    private static final String APP_NAME    = "DriveSync";
+    private static final String TAG       = "DriveSync_Helper";
+    public  static final String DRIVE_DIR = "DriveSync_Backup";
+    private static final String APP_NAME  = "DriveSync";
 
-    // ── Singleton ──
     private static volatile DriveServiceHelper sInstance;
-
     private Drive  mService;
     private String mFolderID;
 
     private DriveServiceHelper() {}
 
-    // ── init: MainActivity থেকে call করতে হবে ──
     public static void init(Context ctx, GoogleSignInAccount account) {
         sInstance = new DriveServiceHelper();
-        sInstance.buildService(ctx.getApplicationContext(), account);
+        sInstance.build(ctx.getApplicationContext(), account);
     }
 
     public static DriveServiceHelper getInstance() {
@@ -53,93 +41,55 @@ public class DriveServiceHelper {
         return sInstance;
     }
 
-    public boolean isReady() {
-        return mService != null && mFolderID != null;
-    }
+    public boolean isReady() { return mService != null && mFolderID != null; }
 
-    // ─────────────────────────────────────────────
-    //  Build Drive Service (background thread)
-    // ─────────────────────────────────────────────
-    private void buildService(Context ctx, GoogleSignInAccount account) {
+    private void build(Context ctx, GoogleSignInAccount account) {
         new Thread(() -> {
             try {
-                // GoogleAccountCredential — Android-এ Client Secret দরকার নেই।
-                // account.getAccount() দিলেই Google Sign-In token ব্যবহার করে।
                 GoogleAccountCredential cred = GoogleAccountCredential
-                        .usingOAuth2(ctx,
-                                Collections.singletonList(DriveScopes.DRIVE));
+                        .usingOAuth2(ctx, Collections.singletonList(DriveScopes.DRIVE));
                 cred.setSelectedAccount(account.getAccount());
 
                 mService = new Drive.Builder(
                         AndroidHttp.newCompatibleTransport(),
-                        GsonFactory.getDefaultInstance(),
-                        cred)
-                        .setApplicationName(APP_NAME)
-                        .build();
+                        GsonFactory.getDefaultInstance(), cred)
+                        .setApplicationName(APP_NAME).build();
 
-                // DriveSync_Backup ফোল্ডার তৈরি বা খোঁজা
                 mFolderID = getOrCreateFolder();
-                Log.d(TAG, "Drive ready ✅  folder=" + mFolderID);
-
+                Log.d(TAG, "Drive ready ✅ folder=" + mFolderID);
             } catch (Exception e) {
-                Log.e(TAG, "buildService error: " + e.getMessage(), e);
+                Log.e(TAG, "build error: " + e.getMessage(), e);
             }
         }).start();
     }
 
-    // ─────────────────────────────────────────────
-    //  Folder: get or create "DriveSync_Backup"
-    // ─────────────────────────────────────────────
     private String getOrCreateFolder() throws IOException {
         String q = "mimeType='application/vnd.google-apps.folder'"
-                 + " and name='" + DRIVE_DIR + "'"
-                 + " and trashed=false";
-
-        FileList result = mService.files().list()
-                .setQ(q)
-                .setFields("files(id)")
-                .execute();
-
-        if (result.getFiles() != null && !result.getFiles().isEmpty()) {
-            return result.getFiles().get(0).getId();
-        }
-
-        // নতুন ফোল্ডার তৈরি
+                + " and name='" + DRIVE_DIR + "' and trashed=false";
+        FileList r = mService.files().list().setQ(q).setFields("files(id)").execute();
+        if (r.getFiles() != null && !r.getFiles().isEmpty())
+            return r.getFiles().get(0).getId();
         File meta = new File();
         meta.setName(DRIVE_DIR);
         meta.setMimeType("application/vnd.google-apps.folder");
         return mService.files().create(meta).setFields("id").execute().getId();
     }
 
-    // ─────────────────────────────────────────────
-    //  Upload or Update a file
-    // ─────────────────────────────────────────────
     /**
-     * @param ctx      Application context
-     * @param fileUri  SAF URI (from folder picker)
-     * @param name     ফাইলের display name
-     * @param mime     MIME type
-     * @return true = সফল, false = ব্যর্থ
+     * Upload বা Update — file size সহ
      */
     public boolean uploadOrUpdate(Context ctx, Uri fileUri,
-                                  String name, String mime) {
-        if (!isReady()) {
-            Log.w(TAG, "Drive not ready yet");
-            return false;
-        }
+                                   String name, String mime, long size) {
+        if (!isReady()) return false;
         java.io.File tmp = null;
         try {
             tmp = copyToTemp(ctx, fileUri, name);
             if (tmp == null) return false;
-
             String existingId = findFile(name);
-            if (existingId != null) {
-                return doUpdate(existingId, tmp, mime);
-            } else {
-                return doUpload(name, tmp, mime);
-            }
+            if (existingId != null) return doUpdate(existingId, tmp, mime);
+            return doUpload(name, tmp, mime);
         } catch (Exception e) {
-            Log.e(TAG, "uploadOrUpdate [" + name + "]: " + e.getMessage(), e);
+            Log.e(TAG, name + ": " + e.getMessage(), e);
             return false;
         } finally {
             if (tmp != null) tmp.delete();
@@ -147,42 +97,31 @@ public class DriveServiceHelper {
     }
 
     private String findFile(String name) throws IOException {
-        String q = "name='" + safeName(name) + "'"
-                 + " and '" + mFolderID + "' in parents"
-                 + " and trashed=false";
-        FileList r = mService.files().list()
-                .setQ(q).setFields("files(id)").execute();
+        String q = "name='" + esc(name) + "' and '"
+                + mFolderID + "' in parents and trashed=false";
+        FileList r = mService.files().list().setQ(q).setFields("files(id)").execute();
         if (r.getFiles() != null && !r.getFiles().isEmpty())
             return r.getFiles().get(0).getId();
         return null;
     }
 
-    private boolean doUpload(String name, java.io.File tmp, String mime)
-            throws IOException {
+    private boolean doUpload(String name, java.io.File tmp, String mime) throws IOException {
         File meta = new File();
         meta.setName(name);
         meta.setParents(Collections.singletonList(mFolderID));
-        mService.files()
-                .create(meta, new FileContent(mime, tmp))
+        mService.files().create(meta, new FileContent(mime, tmp))
                 .setFields("id,name").execute();
         Log.d(TAG, "Uploaded: " + name);
         return true;
     }
 
-    private boolean doUpdate(String id, java.io.File tmp, String mime)
-            throws IOException {
-        mService.files()
-                .update(id, new File(), new FileContent(mime, tmp))
+    private boolean doUpdate(String id, java.io.File tmp, String mime) throws IOException {
+        mService.files().update(id, new File(), new FileContent(mime, tmp))
                 .setFields("id,name,modifiedTime").execute();
         Log.d(TAG, "Updated: " + id);
         return true;
     }
 
-    // ─────────────────────────────────────────────
-    //  Helpers
-    // ─────────────────────────────────────────────
-
-    /** SAF URI → temp file (cache dir) */
     private java.io.File copyToTemp(Context ctx, Uri uri, String name) {
         try {
             InputStream in = ctx.getContentResolver().openInputStream(uri);
@@ -200,12 +139,10 @@ public class DriveServiceHelper {
         }
     }
 
-    /** Single-quote escape (Drive query safe) */
-    private String safeName(String s) {
+    private String esc(String s) {
         return s.replace("\\", "\\\\").replace("'", "\\'");
     }
 
-    /** Extension → MIME type */
     public static String getMime(String name) {
         if (name == null) return "application/octet-stream";
         int dot = name.lastIndexOf('.');
@@ -215,24 +152,15 @@ public class DriveServiceHelper {
             case "png":  return "image/png";
             case "gif":  return "image/gif";
             case "webp": return "image/webp";
-            case "bmp":  return "image/bmp";
             case "pdf":  return "application/pdf";
             case "doc":  return "application/msword";
             case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
             case "xls":  return "application/vnd.ms-excel";
             case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            case "ppt":  return "application/vnd.ms-powerpoint";
-            case "pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
             case "txt":  return "text/plain";
-            case "csv":  return "text/csv";
-            case "json": return "application/json";
             case "mp3":  return "audio/mpeg";
-            case "wav":  return "audio/wav";
             case "mp4":  return "video/mp4";
-            case "mkv":  return "video/x-matroska";
-            case "3gp":  return "video/3gpp";
             case "zip":  return "application/zip";
-            case "rar":  return "application/x-rar-compressed";
             case "apk":  return "application/vnd.android.package-archive";
             default:     return "application/octet-stream";
         }
