@@ -7,25 +7,35 @@ import android.provider.DocumentsContract;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * SyncWorker
- * ══════════
- * WorkManager-এর periodic background worker।
- * শুধুমাত্র Wi-Fi + Charging থাকলে চলে।
- * ফোল্ডার scan করে নতুন/পরিবর্তিত ফাইল Drive-এ পাঠায়।
+ * SyncWorker — একাধিক ফোল্ডার support, progress tracking, file details
  */
 public class SyncWorker extends Worker {
 
     private static final String TAG = "DriveSync_Worker";
 
-    // Input data key
-    public static final String KEY_FOLDER_URI = "folder_uri";
+    // Input keys
+    public static final String KEY_FOLDER_URIS = "folder_uris";
+    public static final String KEY_MANUAL      = "is_manual";
 
-    // শেষ successful sync-এর সময় (epoch ms)
-    // static — process জীবিত থাকলে মনে থাকবে
+    // Progress keys
+    public static final String PROG_PCT = "progress_pct";
+    public static final String PROG_MSG = "progress_msg";
+
+    // Output keys
+    public static final String OUT_SYNCED      = "synced_count";
+    public static final String OUT_DURATION_MS = "duration_ms";
+    public static final String OUT_BYTES       = "total_bytes";
+    public static final String OUT_LOG         = "file_log";
+
+    // শেষ sync সময়
     private static long sLastSyncMs = 0L;
 
     public SyncWorker(@NonNull Context ctx, @NonNull WorkerParameters p) {
@@ -35,80 +45,144 @@ public class SyncWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        Log.d(TAG, "⚙ Worker চালু…");
+        String[] uriArr = getInputData().getStringArray(KEY_FOLDER_URIS);
+        boolean isManual = getInputData().getBoolean(KEY_MANUAL, false);
 
-        String uriStr = getInputData().getString(KEY_FOLDER_URI);
-        if (uriStr == null || uriStr.isEmpty()) {
-            Log.e(TAG, "No folder URI — giving up.");
+        if (uriArr == null || uriArr.length == 0) {
             return Result.failure();
         }
 
         DriveServiceHelper helper = DriveServiceHelper.getInstance();
         if (!helper.isReady()) {
-            Log.w(TAG, "Drive not ready — retry.");
+            setProgress("⏳ Drive সংযোগ হচ্ছে...", 0);
             return Result.retry();
         }
 
-        try {
-            int n = syncFolder(Uri.parse(uriStr), helper);
-            Log.d(TAG, "✅ Sync done — " + n + " file(s) sent.");
-            sLastSyncMs = System.currentTimeMillis();
-            return Result.success();
-        } catch (Exception e) {
-            Log.e(TAG, "doWork error: " + e.getMessage(), e);
-            return Result.retry();
+        long startTime = System.currentTimeMillis();
+        int totalSynced = 0;
+        long totalBytes = 0;
+        StringBuilder fileLog = new StringBuilder();
+
+        // সব ফোল্ডার একে একে scan করা
+        for (int fi = 0; fi < uriArr.length; fi++) {
+            String uriStr = uriArr[fi];
+            String folderName = getFolderName(uriStr);
+            setProgress("📁 " + folderName + " scan হচ্ছে...",
+                    (int)((fi * 100.0) / uriArr.length));
+
+            List<FileInfo> files = scanFolder(Uri.parse(uriStr), isManual);
+
+            for (int i = 0; i < files.size(); i++) {
+                FileInfo file = files.get(i);
+                int pct = (int)(((fi + (double)i/files.size()) / uriArr.length) * 100);
+                setProgress("⬆ " + file.name + " (" + formatSize(file.size) + ")", pct);
+
+                boolean ok = helper.uploadOrUpdate(
+                        getApplicationContext(), file.uri, file.name, file.mime, file.size);
+
+                if (ok) {
+                    totalSynced++;
+                    totalBytes += file.size;
+                    fileLog.append("✅ ").append(file.name)
+                           .append(" (").append(formatSize(file.size)).append(")\n");
+                    Log.d(TAG, "✅ " + file.name);
+                } else {
+                    fileLog.append("❌ ").append(file.name).append("\n");
+                    Log.e(TAG, "❌ " + file.name);
+                }
+            }
         }
+
+        long duration = System.currentTimeMillis() - startTime;
+        if (!isManual) sLastSyncMs = System.currentTimeMillis();
+
+        setProgress("✅ সম্পন্ন! " + totalSynced + " ফাইল।", 100);
+
+        Data output = new Data.Builder()
+                .putInt(OUT_SYNCED, totalSynced)
+                .putLong(OUT_DURATION_MS, duration)
+                .putLong(OUT_BYTES, totalBytes)
+                .putString(OUT_LOG, fileLog.toString())
+                .build();
+
+        return Result.success(output);
     }
 
     /**
-     * SAF ফোল্ডার scan করে পরিবর্তিত ফাইল upload/update করা।
+     * SAF folder scan — সব ফাইল খুঁজে বের করা
      */
-    private int syncFolder(Uri folderUri, DriveServiceHelper helper) {
-        int count = 0;
+    private List<FileInfo> scanFolder(Uri folderUri, boolean isManual) {
+        List<FileInfo> result = new ArrayList<>();
         Context ctx = getApplicationContext();
 
-        // SAF children URI
         Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-                folderUri,
-                DocumentsContract.getTreeDocumentId(folderUri));
+                folderUri, DocumentsContract.getTreeDocumentId(folderUri));
 
-        String[] projection = {
+        String[] proj = {
                 DocumentsContract.Document.COLUMN_DOCUMENT_ID,
                 DocumentsContract.Document.COLUMN_DISPLAY_NAME,
                 DocumentsContract.Document.COLUMN_LAST_MODIFIED,
                 DocumentsContract.Document.COLUMN_MIME_TYPE,
+                DocumentsContract.Document.COLUMN_SIZE,
         };
 
         try (Cursor cur = ctx.getContentResolver()
-                .query(childrenUri, projection, null, null, null)) {
-
-            if (cur == null) { Log.e(TAG, "Cursor null"); return 0; }
+                .query(childrenUri, proj, null, null, null)) {
+            if (cur == null) return result;
 
             while (cur.moveToNext()) {
                 String docId    = cur.getString(0);
                 String name     = cur.getString(1);
                 long   modified = cur.getLong(2);
                 String mime     = cur.getString(3);
+                long   size     = cur.getLong(4);
 
-                // Sub-folder skip
                 if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) continue;
 
-                // আগেই sync হয়েছে এমন ফাইল skip
-                if (modified <= sLastSyncMs) continue;
+                // Manual sync = সব ফাইল। Auto sync = শুধু নতুন/পরিবর্তিত।
+                if (!isManual && modified <= sLastSyncMs) continue;
 
                 Uri fileUri = DocumentsContract.buildDocumentUriUsingTree(folderUri, docId);
                 String fileMime = (mime != null && !mime.isEmpty())
                         ? mime : DriveServiceHelper.getMime(name);
 
-                boolean ok = helper.uploadOrUpdate(ctx, fileUri, name, fileMime);
-                Log.d(TAG, (ok ? "✅ " : "❌ ") + name);
-                if (ok) count++;
+                result.add(new FileInfo(name, fileUri, fileMime, size));
             }
-
         } catch (Exception e) {
-            Log.e(TAG, "syncFolder: " + e.getMessage(), e);
+            Log.e(TAG, "scanFolder: " + e.getMessage());
         }
+        return result;
+    }
 
-        return count;
+    private void setProgress(String msg, int pct) {
+        Data prog = new Data.Builder()
+                .putInt(PROG_PCT, pct)
+                .putString(PROG_MSG, msg)
+                .build();
+        setProgressAsync(prog);
+    }
+
+    private String getFolderName(String uriStr) {
+        Uri uri = Uri.parse(uriStr);
+        String seg = uri.getLastPathSegment();
+        if (seg != null && seg.contains(":")) return seg.substring(seg.lastIndexOf(':') + 1);
+        return seg != null ? seg : "Folder";
+    }
+
+    /** Bytes → human readable */
+    public static String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + "B";
+        if (bytes < 1024 * 1024) return (bytes / 1024) + "KB";
+        return String.format(java.util.Locale.getDefault(), "%.1fMB", bytes / 1048576.0);
+    }
+
+    // ── Inner class ────────────────────────────────────
+    static class FileInfo {
+        String name, mime;
+        Uri    uri;
+        long   size;
+        FileInfo(String n, Uri u, String m, long s) {
+            name=n; uri=u; mime=m; size=s;
+        }
     }
 }
