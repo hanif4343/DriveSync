@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,210 +10,181 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="14dp">
 
-        <!-- ══ HEADER ══ -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- HEADER -->
+        <LinearLayout android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:paddingTop="20dp"
-            android:paddingBottom="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
+            android:orientation="vertical" android:gravity="center"
+            android:paddingTop="16dp" android:paddingBottom="12dp">
+            <TextView android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="☁ DriveSync"
-                android:textSize="30sp"
-                android:textStyle="bold"
-                android:textColor="#1565C0" />
-
-            <TextView
-                android:layout_width="wrap_content"
+                android:textSize="28sp" android:textStyle="bold"
+                android:textColor="#1565C0"/>
+            <TextView android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Local Folder  →  Google Drive"
-                android:textSize="13sp"
-                android:textColor="#78909C"
-                android:layout_marginTop="4dp" />
+                android:text="Local Folders → Google Drive"
+                android:textSize="12sp" android:textColor="#78909C"
+                android:layout_marginTop="2dp"/>
         </LinearLayout>
 
-        <!-- ══ CARD: ACCOUNT ══ -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp"
-            app:cardBackgroundColor="#FFFFFF">
-
-            <LinearLayout
-                android:layout_width="match_parent"
+        <!-- ACCOUNT CARD -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+            app:cardCornerRadius="12dp" app:cardElevation="3dp">
+            <LinearLayout android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="GOOGLE ACCOUNT"
-                    android:textSize="10sp"
-                    android:textColor="#90A4AE"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="6dp" />
-
-                <TextView
-                    android:id="@+id/tv_account"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="লগইন করা হয়নি"
-                    android:textSize="15sp"
-                    android:textColor="#263238"
-                    android:layout_marginBottom="12dp" />
-
-                <Button
-                    android:id="@+id/btn_sign_in"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="GOOGLE ACCOUNT" android:textSize="10sp"
+                    android:textColor="#90A4AE" android:layout_marginBottom="4dp"/>
+                <TextView android:id="@+id/tv_account"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="লগইন করা হয়নি" android:textSize="14sp"
+                    android:textColor="#263238" android:layout_marginBottom="10dp"/>
+                <Button android:id="@+id/btn_sign_in"
+                    android:layout_width="match_parent" android:layout_height="46dp"
                     android:text="Google দিয়ে লগইন করুন"
-                    android:backgroundTint="#1565C0"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp" />
+                    android:backgroundTint="#1565C0" android:textColor="#FFF" android:textSize="13sp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- ══ CARD: FOLDER ══ -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp"
-            app:cardBackgroundColor="#FFFFFF">
-
-            <LinearLayout
-                android:layout_width="match_parent"
+        <!-- FOLDERS CARD -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+            app:cardCornerRadius="12dp" app:cardElevation="3dp">
+            <LinearLayout android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="vertical" android:padding="14dp">
+                <LinearLayout android:layout_width="match_parent"
+                    android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="SYNC FOLDERS" android:textSize="10sp"
+                        android:textColor="#90A4AE"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="একাধিক ফোল্ডার যোগ করুন"
+                        android:textSize="9sp" android:textColor="#78909C"/>
+                </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="WATCH FOLDER"
-                    android:textSize="10sp"
-                    android:textColor="#90A4AE"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="6dp" />
+                <!-- Dynamic folder list -->
+                <LinearLayout android:id="@+id/ll_folders"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:layout_marginTop="8dp"
+                    android:layout_marginBottom="10dp"/>
 
-                <TextView
-                    android:id="@+id/tv_folder"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="📁 কোনো ফোল্ডার বেছে নেওয়া হয়নি"
-                    android:textSize="15sp"
-                    android:textColor="#263238"
-                    android:layout_marginBottom="12dp" />
-
-                <Button
-                    android:id="@+id/btn_folder"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="ফোল্ডার বেছে নিন"
-                    android:backgroundTint="#2E7D32"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp" />
+                <Button android:id="@+id/btn_add_folder"
+                    android:layout_width="match_parent" android:layout_height="44dp"
+                    android:text="+ নতুন ফোল্ডার যোগ করুন"
+                    android:backgroundTint="#2E7D32" android:textColor="#FFF" android:textSize="13sp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- ══ CARD: CONTROL ══ -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp"
-            app:cardBackgroundColor="#FFFFFF">
-
-            <LinearLayout
-                android:layout_width="match_parent"
+        <!-- SYNC CONTROL CARD -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+            app:cardCornerRadius="12dp" app:cardElevation="3dp">
+            <LinearLayout android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="SYNC CONTROL" android:textSize="10sp"
+                    android:textColor="#90A4AE" android:layout_marginBottom="10dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="SYNC CONTROL"
-                    android:textSize="10sp"
-                    android:textColor="#90A4AE"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="12dp" />
+                <!-- Sync Now — mobile data, no charging needed -->
+                <Button android:id="@+id/btn_sync_now"
+                    android:layout_width="match_parent" android:layout_height="50dp"
+                    android:text="⚡ এখনই Sync করুন"
+                    android:backgroundTint="#E65100" android:textColor="#FFF"
+                    android:textSize="15sp" android:textStyle="bold"
+                    android:layout_marginBottom="8dp"/>
 
-                <Button
-                    android:id="@+id/btn_start"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="▶  Sync শুরু করুন"
-                    android:backgroundTint="#1565C0"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginBottom="8dp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="(যেকোনো নেটওয়ার্কে, চার্জ ছাড়াও)"
+                    android:textSize="11sp" android:textColor="#78909C"
+                    android:gravity="center" android:layout_marginBottom="12dp"/>
 
-                <Button
-                    android:id="@+id/btn_stop"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="⏹  Sync বন্ধ করুন"
-                    android:backgroundTint="#B71C1C"
-                    android:textColor="#FFFFFF" />
+                <!-- Divider -->
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#E0E0E0" android:layout_marginBottom="12dp"/>
 
-                <TextView
-                    android:id="@+id/tv_wifi_note"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="⚡ শুধুমাত্র Wi-Fi ও Charging-এ Sync হবে"
-                    android:textSize="12sp"
-                    android:textColor="#2E7D32"
-                    android:gravity="center"
-                    android:layout_marginTop="10dp"
-                    android:visibility="gone" />
+                <Button android:id="@+id/btn_start"
+                    android:layout_width="match_parent" android:layout_height="44dp"
+                    android:text="🔄 Auto Sync চালু করুন"
+                    android:backgroundTint="#1565C0" android:textColor="#FFF"
+                    android:textSize="13sp" android:layout_marginBottom="8dp"/>
+
+                <Button android:id="@+id/btn_stop"
+                    android:layout_width="match_parent" android:layout_height="44dp"
+                    android:text="⏹ Auto Sync বন্ধ করুন"
+                    android:backgroundTint="#B71C1C" android:textColor="#FFF" android:textSize="13sp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Auto Sync: Wi-Fi + Charging-এ প্রতি ১৫ মিনিটে"
+                    android:textSize="10sp" android:textColor="#78909C"
+                    android:gravity="center" android:layout_marginTop="6dp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- ══ CARD: STATUS ══ -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp"
-            app:cardBackgroundColor="#FFFFFF">
-
-            <LinearLayout
-                android:layout_width="match_parent"
+        <!-- PROGRESS CARD -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+            app:cardCornerRadius="12dp" app:cardElevation="3dp">
+            <LinearLayout android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="vertical" android:padding="14dp">
+                <ProgressBar android:id="@+id/progress_bar"
+                    style="@android:style/Widget.ProgressBar.Horizontal"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:max="100" android:progress="0" android:visibility="gone"/>
+                <TextView android:id="@+id/tv_progress"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textSize="12sp" android:textColor="#1565C0"
+                    android:gravity="center" android:layout_marginTop="6dp"
+                    android:visibility="gone"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="STATUS"
-                    android:textSize="10sp"
-                    android:textColor="#90A4AE"
-                    android:letterSpacing="0.08"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:id="@+id/tv_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+        <!-- STATUS CARD -->
+        <androidx.cardview.widget.CardView android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:layout_marginBottom="10dp"
+            app:cardCornerRadius="12dp" app:cardElevation="3dp">
+            <LinearLayout android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" android:padding="14dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="STATUS" android:textSize="10sp"
+                    android:textColor="#90A4AE" android:layout_marginBottom="6dp"/>
+                <TextView android:id="@+id/tv_status"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:text="Google দিয়ে লগইন করুন শুরু করতে।"
-                    android:textSize="14sp"
-                    android:textColor="#37474F"
-                    android:lineSpacingExtra="4dp" />
+                    android:textSize="13sp" android:textColor="#37474F"
+                    android:lineSpacingExtra="3dp"/>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <!-- LAST SYNC LOG CARD -->
+        <TextView android:id="@+id/tv_last_sync"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="সর্বশেষ Sync তথ্য"
+            android:textSize="10sp" android:textColor="#90A4AE"
+            android:layout_marginBottom="4dp" android:visibility="gone"/>
+
+        <ScrollView android:id="@+id/sv_log"
+            android:layout_width="match_parent" android:layout_height="180dp"
+            android:layout_marginBottom="20dp" android:visibility="gone">
+            <androidx.cardview.widget.CardView android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp" app:cardElevation="3dp"
+                app:cardBackgroundColor="#1A237E">
+                <TextView android:id="@+id/tv_log"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:padding="12dp" android:textSize="11sp"
+                    android:textColor="#C5CAE9" android:fontFamily="monospace"
+                    android:lineSpacingExtra="3dp"/>
+            </androidx.cardview.widget.CardView>
+        </ScrollView>
 
     </LinearLayout>
 </ScrollView>
