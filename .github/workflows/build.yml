@@ -35,32 +35,36 @@ jobs:
             "build-tools;34.0.0" \
             "platform-tools" || true
 
+      - name: Install Gradle 8.4 directly
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.4/bin" >> $GITHUB_PATH
+
+      - name: Verify Gradle
+        run: gradle --version
+
       - name: Write google-services.json
         run: printf '%s' '${{ secrets.GOOGLE_SERVICES_JSON }}' > app/google-services.json
 
       - name: Decode Keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > app/drivesync.jks
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Download Gradle wrapper jar
-        run: |
-          mkdir -p gradle/wrapper
-          curl -sL "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
-            -o gradle/wrapper/gradle-wrapper.jar
-
       - name: Build Signed APK
         run: |
-          ./gradlew assembleDebug \
+          gradle assembleDebug \
             -Pandroid.injected.signing.store.file=drivesync.jks \
             -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
             -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
             -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
-            --no-daemon
+            --no-daemon \
+            --stacktrace
 
       - name: Show APK SHA-1
-        run: keytool -printcert -jarfile app/build/outputs/apk/debug/app-debug.apk | grep SHA1 || true
+        run: |
+          keytool -printcert \
+            -jarfile app/build/outputs/apk/debug/app-debug.apk \
+            | grep SHA1 || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
