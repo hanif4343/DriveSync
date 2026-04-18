@@ -18,7 +18,7 @@ Local Android folder → Google Drive automatic sync app.
 5. Download APK from **Artifacts**
 
 ## SHA-1
-`58:72:C5:20:D9:A9:DA:89:39:2A:FC:16:E1:0A:05:51:5C:59:18:B5`
+`bf:7a:fa:e7:46:ea:20:7b:ff:e8:33:ce:2d:85:4f:d3:0b:bb:05:ec`
 
 ## Package
 `com.drivesync.app`
